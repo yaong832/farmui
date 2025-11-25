@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 농장 데이터 분석 시스템</title>
+    <!-- Chart.js 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: '맑은 고딕', 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* 헤더 바 */
+        .header-bar {
+            background: #1a1a2e;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .header-icons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .header-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+        }
+        
+        /* 메인 컨테이너 */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        
+        /* 왼쪽 패널 - 데이터 로그 */
+        .data-log-panel {
+            flex: 1;
+            background: white;
+            margin: 15px;
+            margin-right: 7.5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-header h2 {
+            font-size: 20px;
+            color: #333;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .log-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .log-action-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .log-action-btn:hover {
+            background: #45a049;
+        }
+        
+        .log-action-btn span {
+            margin-right: 4px;
+        }
+        
+        .data-log-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 20px;
+            max-height: 50%;
+        }
+        
+        /* 그래프 섹션 */
+        .chart-section {
+            height: 50%;
+            border-top: 2px solid #e0e0e0;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-header {
+            margin-bottom: 10px;
+        }
+        
+        .chart-header h3 {
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 250px;
+        }
+        
+        .log-entry {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-timestamp {
+            color: #666;
+            margin-right: 15px;
+        }
+        
+        .log-data {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        
+        .log-label {
+            color: #888;
+            margin-right: 5px;
+        }
+        
+        .log-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        /* 오른쪽 사이드바 */
+        .ai-sidebar {
+            width: 350px;
+            background: white;
+            margin: 15px;
+            margin-left: 7.5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* AI 품질 분석 섹션 */
+        .ai-analysis-section {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .ai-analysis-section h2 {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .average-data {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .average-data-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .metric-value {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* 버튼 섹션 */
+        .button-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f8f9fa;
+            border-left: 2px solid #e0e0e0;
+        }
+        
+        .analysis-mode-section {
+            padding: 18px 20px;
+            border-bottom: 2px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        
+        .mode-label {
+            font-size: 15px;
+            color: #495057;
+            font-weight: 600;
+            min-width: 80px;
+        }
+        
+        .mode-select {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .mode-select:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+        
+        .mode-select:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+        }
+        
+        .action-button {
+            width: 100%;
+            padding: 16px 22px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(76, 175, 80, 0.25);
+            text-transform: none;
+            letter-spacing: 0.3px;
+        }
+        
+        .action-button:hover {
+            background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(76, 175, 80, 0.35);
+        }
+        
+        .action-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.25);
+        }
+        
+        .action-button .icon {
+            font-size: 20px;
+        }
+        
+        
+        /* 결과 표시 영역 */
+        .result-container {
+            padding: 20px;
+            border-top: 2px solid #e0e0e0;
+            max-height: 600px;
+            min-height: 400px;
+            overflow-y: auto;
+            display: none;
+            background: #fafafa;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .result-container.active {
+            display: block;
+        }
+        
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        .result-content {
+            font-size: 14px;
+            color: #34495e;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* 스크롤바 스타일 */
+        .data-log-content::-webkit-scrollbar,
+        .result-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .data-log-content::-webkit-scrollbar-track,
+        .result-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .data-log-content::-webkit-scrollbar-thumb,
+        .result-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .data-log-content::-webkit-scrollbar-thumb:hover,
+        .result-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 바 -->
+    <div class="header-bar">
+        <div class="header-title">
+            AI 농장 데이터 분석 시스템
+            <span id="farmInfo" style="font-size: 14px; margin-left: 15px; color: #a0a0a0; font-weight: normal;">
+                (스마트팜 <span id="currentFarmNumber">1</span>번 - <span id="currentCropName">로딩 중...</span>)
+            </span>
+        </div>
+        <div class="header-icons">
+            <div class="header-icon">⚙️</div>
+            <div class="header-icon">🏠</div>
+        </div>
+    </div>
+    
+    <!-- 메인 컨테이너 -->
+    <div class="main-container">
+        <!-- 왼쪽 패널 - 데이터 로그 -->
+        <div class="data-log-panel">
+            <div class="panel-header">
+                <h2>데이터 로그</h2>
+                <div class="log-actions">
+                    <button class="log-action-btn" onclick="loadLogFile()" title="로그 파일 불러오기">
+                        <span>📂</span> 불러오기
+                    </button>
+                    <button class="log-action-btn" onclick="saveLogFile()" title="로그 파일 저장">
+                        <span>💾</span> 저장
+                    </button>
+                </div>
+            </div>
+            <div class="data-log-content" id="dataLogContent">
+                <div class="empty-state">데이터 로그를 불러오는 중...</div>
+            </div>
+            
+            <!-- 그래프 섹션 -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h3>센서 데이터 그래프</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sensorChart"></canvas>
+                </div>
+            </div>
+            
+            <input type="file" id="logFileInput" accept=".txt" style="display: none;" onchange="handleLogFileSelect(event)">
+        </div>
+        
+        <!-- 오른쪽 사이드바 -->
+        <div class="ai-sidebar">
+            <!-- AI 품질 분석 섹션 -->
+            <div class="ai-analysis-section">
+                <h2>AI 품질 분석</h2>
+                <div class="average-data">
+                    <div class="average-data-title">평균 데이터</div>
+                    <div class="metric-item">
+                        <span class="metric-label">온도</span>
+                        <span class="metric-value" id="avgTemperature">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">습도</span>
+                        <span class="metric-value" id="avgHumidity">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">채광</span>
+                        <span class="metric-value" id="avgLight">-</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">토양 습도</span>
+                        <span class="metric-value" id="avgSoilMoisture">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 분석 모드 선택 -->
+            <div class="analysis-mode-section">
+                <label class="mode-label">분석 모드:</label>
+                <select id="analysisMode" class="mode-select" onchange="onAnalysisModeChange()">
+                    <option value="realtime">실시간 데이터</option>
+                    <option value="logs">로그 파일</option>
+                </select>
+            </div>
+            
+            <!-- 버튼 섹션 -->
+            <div class="button-section">
+                <button class="action-button" onclick="analyzeAverage()">
+                    <span class="icon">📊</span>
+                    <span>평균 데이터 분석</span>
+                </button>
+                <button class="action-button" onclick="detectAnomalies()">
+                    <span class="icon">⚠️</span>
+                    <span>이상 징후 감지</span>
+                </button>
+            </div>
+            
+            <!-- 결과 표시 영역 -->
+            <div class="result-container" id="resultContainer">
+                <div class="result-title" id="resultTitle"></div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 농장 정보 전역 변수
+        let currentFarmData = {
+            currentFarm: 1,
+            farms: []
+        };
+        
+        // 각 팜의 데이터 로그를 메모리에 별도로 저장 (실시간 데이터 유지)
+        let farmLogs = {
+            1: [],  // 팜 1번의 로그 항목들
+            2: [],  // 팜 2번의 로그 항목들
+            3: []   // 팜 3번의 로그 항목들
+        };
+        
+        // 로그 관리 설정
+        const LOG_CONFIG = {
+            maxLogsPerFarm: 200,        // 팜당 최대 로그 개수 (메모리)
+            maxDisplayLogs: 100,        // 화면에 표시할 최대 로그 개수
+            maxStorageLogs: 500,        // 로컬 스토리지에 저장할 최대 로그 개수
+            cleanupInterval: 300000,    // 5분마다 오래된 로그 정리 (밀리초)
+            maxLogAge: 24 * 60 * 60 * 1000,  // 최대 로그 보관 기간 (24시간, 밀리초)
+            autoSaveBeforeCleanup: true  // 정리 전에 자동으로 파일로 저장할지 여부
+        };
+        
+        // 농장 정보 업데이트 함수
+        function updateFarmInfo() {
+            fetch('/api/farm')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 농장 데이터 저장
+                    currentFarmData = data;
+                    
+                    // 헤더에 농장 정보 표시
+                    const currentFarm = data.currentFarm || 1;
+                    const farms = data.farms || [];
+                    const currentFarmInfo = farms.find(f => f.id === currentFarm);
+                    const cropName = currentFarmInfo ? (currentFarmInfo.cropName || '로딩 중...') : '로딩 중...';
+                    
+                    const farmNumberEl = document.getElementById('currentFarmNumber');
+                    const cropNameEl = document.getElementById('currentCropName');
+                    
+                    if (farmNumberEl) {
+                        farmNumberEl.textContent = currentFarm;
+                    }
+                    if (cropNameEl) {
+                        cropNameEl.textContent = cropName;
+                    }
+                    
+                    // 농장 정보 업데이트 후 현재 농장의 데이터 로그 표시 (초기 로드 시)
+                    if (currentFarm && !window.farmDataLogRestored) {
+                        // 메모리에 로그가 없으면 백업에서 복원 시도
+                        if (!farmLogs[currentFarm] || farmLogs[currentFarm].length === 0) {
+                            restoreFarmDataLog(currentFarm);
+                        } else {
+                            displayFarmLog(currentFarm);
+                        }
+                        window.farmDataLogRestored = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('농장 정보 업데이트 오류:', error);
+                });
+        }
+        
+        function updateSensorData() {
+            // 분석 모드가 로그 파일이면 실시간 데이터 수집 중단
+            if (analysisMode === 'logs') {
+                return;
+            }
+            
+            fetch('/api/sensors')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 데이터가 없거나 센서가 비어있으면 스킵
+                    if (data && data.sensors && data.sensors.length > 0) {
+                        // 센서 데이터의 currentFarm이 변경되었을 수 있으므로 농장 정보도 업데이트
+                        if (data.currentFarm !== currentFarmData.currentFarm) {
+                            // 농장이 변경되었을 때: 기존 농장의 데이터 로그 저장
+                            if (currentFarmData.currentFarm) {
+                                saveFarmDataLog(currentFarmData.currentFarm);
+                            }
+                            // 새 농장의 데이터 로그 복원
+                            restoreFarmDataLog(data.currentFarm);
+                            updateFarmInfo();
+                        }
+                        updateDataLog(data);
+                        updateAverageData(data);
+                        updateChart(data);  // 그래프 업데이트
+                    } else {
+                        console.warn('⚠️ 센서 데이터가 없습니다. C# UI가 실행 중이고 Flask 서버로 데이터를 전송하고 있는지 확인하세요.');
+                        
+                        // 사용자에게 표시 (처음 한 번만)
+                        if (!window.dataWarningShown) {
+                            const container = document.getElementById('dataLogContent');
+                            if (container && container.children.length === 0) {
+                                const warningMsg = document.createElement('div');
+                                warningMsg.className = 'log-entry';
+                                warningMsg.style.color = '#ff6b6b';
+                                warningMsg.innerHTML = '<span style="font-weight: bold;">⚠️ 실시간 데이터를 받을 수 없습니다.</span><br>' +
+                                    '1. C# UI가 실행 중인지 확인하세요<br>' +
+                                    '2. C# UI의 "웹 연결" 버튼을 눌러 Flask 서버에 연결하세요<br>' +
+                                    '3. C# UI의 전원이 켜져 있고 PLC 연결이 되어 있는지 확인하세요';
+                                container.appendChild(warningMsg);
+                                window.dataWarningShown = true;
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('센서 데이터 오류:', error);
+                    // 에러 표시 (선택사항)
+                    // showStatusMessage('센서 데이터를 불러올 수 없습니다: ' + error.message, 'error');
+                });
+        }
+        
+        // 현재 선택된 팜의 로그를 화면에 표시
+        function displayFarmLog(farmId) {
+            if (!farmId) return;
+            
+            const container = document.getElementById('dataLogContent');
+            if (!container) return;
+            
+            // 해당 팜의 로그 항목들을 화면에 표시 (표시 제한 적용)
+            const allLogs = farmLogs[farmId] || [];
+            const logs = allLogs.slice(0, LOG_CONFIG.maxDisplayLogs);  // 화면에는 최대 개수만 표시
+            
+            // 농장 정보 가져오기
+            const farms = currentFarmData.farms || [];
+            const farmInfo = farms.find(f => f.id === farmId);
+            const cropName = farmInfo ? (farmInfo.cropName || '기본') : '기본';
+            
+            // 헤더 추가 (팜 구분을 위한)
+            let html = `<div class="farm-log-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; font-weight: bold; font-size: 14px;">
+                🏠 스마트팜 ${farmId}번 - ${cropName} (실시간 데이터)
+                ${allLogs.length > LOG_CONFIG.maxDisplayLogs ? `<span style="font-size: 11px; opacity: 0.9;">(${allLogs.length}개 중 최신 ${LOG_CONFIG.maxDisplayLogs}개 표시)</span>` : `<span style="font-size: 11px; opacity: 0.9;">(${allLogs.length}개)</span>`}
+            </div>`;
+            
+            // 로그 항목들 추가
+            logs.forEach(logEntry => {
+                html += logEntry;
+            });
+            
+            container.innerHTML = html;
+            console.log(`✅ 팜 ${farmId}의 로그 표시 (전체: ${allLogs.length}개, 표시: ${logs.length}개)`);
+        }
+        
+        // 농장별 데이터 로그 저장 (로컬 스토리지 - 백업용)
+        function saveFarmDataLog(farmId) {
+            if (!farmId) return;
+            
+            const logs = farmLogs[farmId] || [];
+            if (logs.length === 0) return;
+            
+            // 저장할 로그 개수 제한 (오래된 로그는 제외)
+            const logsToSave = logs.slice(0, LOG_CONFIG.maxStorageLogs);
+            const logHtml = logsToSave.join('');
+            
+            // 로컬 스토리지에 저장 (백업용)
+            try {
+                localStorage.setItem(`farm_log_${farmId}`, logHtml);
+                console.log(`✅ 농장 ${farmId}의 데이터 로그 백업 완료 (${logsToSave.length}/${logs.length}개 항목 저장)`);
+            } catch (e) {
+                // 로컬 스토리지 용량 초과 시 오래된 로그 삭제 후 재시도
+                if (e.name === 'QuotaExceededError') {
+                    console.warn(`⚠️ 로컬 스토리지 용량 초과. 오래된 로그를 삭제하고 재시도합니다.`);
+                    // 더 적은 양으로 재시도
+                    const reducedLogs = logs.slice(0, Math.floor(LOG_CONFIG.maxStorageLogs * 0.5));
+                    try {
+                        localStorage.setItem(`farm_log_${farmId}`, reducedLogs.join(''));
+                        console.log(`✅ 농장 ${farmId}의 데이터 로그 백업 완료 (용량 절약: ${reducedLogs.length}개 항목)`);
+                    } catch (e2) {
+                        console.error('데이터 로그 저장 실패 (용량 부족):', e2);
+                    }
+                } else {
+                    console.error('데이터 로그 저장 오류:', e);
+                }
+            }
+        }
+        
+        // 오래된 로그를 파일로 자동 저장하는 함수
+        async function autoSaveOldLogs(farmId, oldLogs) {
+            if (!LOG_CONFIG.autoSaveBeforeCleanup || oldLogs.length === 0) {
+                return;
+            }
+            
+            try {
+                const farms = currentFarmData.farms || [];
+                const farmInfo = farms.find(f => f.id === farmId);
+                const cropName = farmInfo ? (farmInfo.cropName || '기본') : '기본';
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                
+                // 오래된 로그를 텍스트로 변환
+                let logContent = '';
+                oldLogs.forEach(logHtml => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = logHtml;
+                    const logEntry = tempDiv.querySelector('.log-entry');
+                    if (logEntry) {
+                        logContent += logEntry.textContent + '\n';
+                    }
+                });
+                
+                if (logContent.trim() !== '') {
+                    // 파일로 저장 (자동 다운로드)
+                    const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `SmartFarm_팜${farmId}_${cropName}_자동저장_${timestamp}.txt`;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    console.log(`💾 팜 ${farmId}의 오래된 로그 ${oldLogs.length}개를 자동 저장했습니다.`);
+                }
+            } catch (e) {
+                console.error(`팜 ${farmId} 자동 저장 오류:`, e);
+            }
+        }
+        
+        // 오래된 로그 정리 함수
+        async function cleanupOldLogs() {
+            const now = Date.now();
+            let totalCleaned = 0;
+            
+            for (let farmId = 1; farmId <= 3; farmId++) {
+                const logs = farmLogs[farmId] || [];
+                if (logs.length === 0) continue;
+                
+                // 최대 개수 초과 시 오래된 로그 분리
+                if (logs.length > LOG_CONFIG.maxLogsPerFarm) {
+                    const oldLogs = logs.slice(LOG_CONFIG.maxLogsPerFarm);  // 삭제될 오래된 로그
+                    const validLogs = logs.slice(0, LOG_CONFIG.maxLogsPerFarm);  // 유지할 로그
+                    
+                    // 정리 전에 오래된 로그를 자동 저장
+                    if (LOG_CONFIG.autoSaveBeforeCleanup && oldLogs.length > 0) {
+                        await autoSaveOldLogs(farmId, oldLogs);
+                        // 파일 다운로드 간 지연
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    
+                    farmLogs[farmId] = validLogs;
+                    totalCleaned += oldLogs.length;
+                }
+            }
+            
+            if (totalCleaned > 0) {
+                console.log(`🧹 오래된 로그 정리 완료: ${totalCleaned}개 항목 삭제${LOG_CONFIG.autoSaveBeforeCleanup ? ' (자동 저장됨)' : ''}`);
+            }
+        }
+        
+        // 농장별 데이터 로그 복원 (로컬 스토리지 - 백업에서 복원)
+        function restoreFarmDataLog(farmId) {
+            if (!farmId) return;
+            
+            // 메모리에 이미 로그가 있으면 복원하지 않음 (실시간 데이터 유지)
+            if (farmLogs[farmId] && farmLogs[farmId].length > 0) {
+                displayFarmLog(farmId);
+                return;
+            }
+            
+            // 로컬 스토리지에서 복원 (백업이 있는 경우)
+            try {
+                const savedLogHtml = localStorage.getItem(`farm_log_${farmId}`);
+                if (savedLogHtml && savedLogHtml.trim() !== '') {
+                    // HTML을 파싱하여 로그 항목들 추출
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = savedLogHtml;
+                    const logEntries = tempDiv.querySelectorAll('.log-entry');
+                    
+                    farmLogs[farmId] = [];
+                    logEntries.forEach(entry => {
+                        farmLogs[farmId].push(entry.outerHTML);
+                    });
+                    
+                    console.log(`✅ 농장 ${farmId}의 데이터 로그 복원 완료 (${farmLogs[farmId].length}개 항목)`);
+                } else {
+                    // 저장된 데이터가 없으면 초기화
+                    farmLogs[farmId] = [];
+                    console.log(`ℹ️ 농장 ${farmId}의 저장된 데이터 로그가 없습니다. 새로 시작합니다.`);
+                }
+                
+                displayFarmLog(farmId);
+            } catch (e) {
+                console.error('데이터 로그 복원 오류:', e);
+                farmLogs[farmId] = [];
+                displayFarmLog(farmId);
+            }
+        }
+        
+        // 데이터 로그 업데이트 (현재 선택된 팜의 로그에만 추가)
+        function updateDataLog(sensorData) {
+            // 분석 모드가 로그 파일이면 실시간 로그 업데이트 중단
+            if (analysisMode === 'logs') {
+                return;
+            }
+            
+            // 현재 선택된 팜 확인
+            const currentFarm = sensorData.currentFarm || currentFarmData.currentFarm || 1;
+            
+            // 센서 데이터를 로그 형식으로 변환하여 해당 팜의 로그에 추가
+            if (sensorData && sensorData.sensors && sensorData.sensors.length > 0) {
+                const now = new Date();
+                const timestamp = now.getFullYear() + '. ' + (now.getMonth() + 1) + '. ' + now.getDate() + '. ' +
+                                 (now.getHours() >= 12 ? '오후' : '오전') + ' ' +
+                                 (now.getHours() > 12 ? now.getHours() - 12 : now.getHours()) + ':' +
+                                 (now.getMinutes() < 10 ? '0' : '') + now.getMinutes() + ':' +
+                                 (now.getSeconds() < 10 ? '0' : '') + now.getSeconds();
+                
+                // 센서 값 추출
+                let temperature = null;
+                let humidity = null;
+                let light = null;
+                let soilMoisture = null;
+                
+                sensorData.sensors.forEach(sensor => {
+                    if (sensor.name === '온도') {
+                        temperature = parseFloat(sensor.rawValue);
+                    } else if (sensor.name === '습도') {
+                        humidity = parseFloat(sensor.rawValue);
+                    } else if (sensor.name === '채광') {
+                        light = parseFloat(sensor.rawValue);
+                    } else if (sensor.name === '토양습도') {
+                        soilMoisture = parseFloat(sensor.rawValue);
+                    }
+                });
+                
+                // 로그 항목 생성 (4개 센서 모두 포함)
+                if (temperature !== null || humidity !== null || light !== null || soilMoisture !== null) {
+                    let logHtml = `<div class="log-entry">`;
+                    logHtml += `<span class="log-timestamp">[${timestamp}]</span>`;
+                    
+                    if (temperature !== null) {
+                        logHtml += `<span class="log-data"><span class="log-label">온도:</span> <span class="log-value">${temperature.toFixed(1)}°C</span></span>`;
+                    }
+                    if (humidity !== null) {
+                        logHtml += `<span class="log-data"><span class="log-label">습도:</span> <span class="log-value">${humidity.toFixed(1)}%</span></span>`;
+                    }
+                    if (light !== null) {
+                        logHtml += `<span class="log-data"><span class="log-label">채광:</span> <span class="log-value">${light.toFixed(1)}%</span></span>`;
+                    }
+                    if (soilMoisture !== null) {
+                        logHtml += `<span class="log-data"><span class="log-label">토양 습도:</span> <span class="log-value">${soilMoisture.toFixed(1)}%</span></span>`;
+                    }
+                    logHtml += `</div>`;
+                    
+                    // 해당 팜의 로그 배열에 추가 (최신 데이터가 앞에)
+                    if (!farmLogs[currentFarm]) {
+                        farmLogs[currentFarm] = [];
+                    }
+                    farmLogs[currentFarm].unshift(logHtml);
+                    
+                    // 최대 로그 개수 제한 (오래된 로그 자동 삭제)
+                    if (farmLogs[currentFarm].length > LOG_CONFIG.maxLogsPerFarm) {
+                        farmLogs[currentFarm] = farmLogs[currentFarm].slice(0, LOG_CONFIG.maxLogsPerFarm);
+                        console.log(`ℹ️ 팜 ${currentFarm}의 로그가 ${LOG_CONFIG.maxLogsPerFarm}개를 초과하여 오래된 로그를 삭제했습니다.`);
+                    }
+                    
+                    // 현재 선택된 팜이면 화면에 즉시 표시
+                    if (currentFarm === currentFarmData.currentFarm) {
+                        displayFarmLog(currentFarm);
+                    }
+                }
+            }
+        }
+        
+        // 평균 데이터 업데이트
+        function updateAverageData(sensorData) {
+            // 분석 모드가 로그 파일이면 실시간 평균 업데이트 중단
+            if (analysisMode === 'logs') {
+                return;
+            }
+            
+            if (!sensorData || !sensorData.sensors) return;
+            
+            let tempSum = 0, tempCount = 0;
+            let humiditySum = 0, humidityCount = 0;
+            let lightSum = 0, lightCount = 0;
+            let soilSum = 0, soilCount = 0;
+            
+            // 로그에서 평균 계산 (최근 10개 항목)
+            const logEntries = document.querySelectorAll('.log-entry');
+            const entriesToUse = Math.min(10, logEntries.length);
+            
+            for (let i = 0; i < entriesToUse; i++) {
+                const entry = logEntries[i];
+                const text = entry.textContent;
+                
+                // 온도 추출 (새 형식: 온도:값℃, 기존 형식: 온도: 값°C)
+                const tempMatch = text.match(/온도:\s*([0-9.]+)[℃°C]/) || text.match(/온도[^:]*\([^)]*?([0-9.]+)\s*[℃°C]/);
+                if (tempMatch) {
+                    tempSum += parseFloat(tempMatch[1]);
+                    tempCount++;
+                }
+                
+                // 습도 추출 (새 형식: 습도:값%, 기존 형식: 습도: 값%)
+                const humidityMatch = text.match(/습도:\s*([0-9.]+)%/) || text.match(/습도[^:]*\([^)]*?([0-9.]+)\s*%/);
+                if (humidityMatch) {
+                    humiditySum += parseFloat(humidityMatch[1]);
+                    humidityCount++;
+                }
+                
+                // 채광 추출 (새 형식: 채광:값%, 기존 형식: 채광: 값%)
+                const lightMatch = text.match(/채광:\s*([0-9.]+)%/) || text.match(/채광[^:]*\([^)]*?([0-9.]+)\s*%/);
+                if (lightMatch) {
+                    lightSum += parseFloat(lightMatch[1]);
+                    lightCount++;
+                }
+                
+                // 토양습도 추출 (새 형식: 토양습도:값%, 기존 형식: 토양 습도: 값% 또는 토양습도 값 낮음 (값%))
+                const soilMatch = text.match(/토양습도:\s*([0-9.]+)%/) || 
+                                 text.match(/토양\s*습도:\s*([0-9.]+)%/) || 
+                                 text.match(/토양습도[^:]*\([^)]*?([0-9.]+)\s*%/);
+                if (soilMatch) {
+                    soilSum += parseFloat(soilMatch[1]);
+                    soilCount++;
+                }
+            }
+            
+            // 평균값 표시
+            document.getElementById('avgTemperature').textContent = 
+                tempCount > 0 ? (tempSum / tempCount).toFixed(2) + '°C' : '-';
+            document.getElementById('avgHumidity').textContent = 
+                humidityCount > 0 ? (humiditySum / humidityCount).toFixed(2) + '%' : '-';
+            document.getElementById('avgLight').textContent = 
+                lightCount > 0 ? (lightSum / lightCount).toFixed(2) + '%' : '-';
+            document.getElementById('avgSoilMoisture').textContent = 
+                soilCount > 0 ? (soilSum / soilCount).toFixed(2) + '%' : '-';
+        }
+        
+        // 전역 변수
+        let loadedLogData = null;  // 불러온 로그 데이터
+        let analysisMode = 'realtime';  // 'realtime' 또는 'logs'
+        // currentFarmData는 위에서 이미 정의됨 (중복 제거)
+        
+        // 로그 파일 불러오기
+        function loadLogFile() {
+            document.getElementById('logFileInput').click();
+        }
+        
+        // 로그 파일 선택 처리
+        function handleLogFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                loadedLogData = content;
+                
+                // 로그 데이터를 UI에 표시
+                displayLogData(content);
+                
+                // 로그 데이터를 그래프에 표시
+                updateChartFromLogs(content);
+                
+                // 분석 모드를 로그 파일로 변경
+                document.getElementById('analysisMode').value = 'logs';
+                analysisMode = 'logs';
+                
+                alert('로그 파일이 성공적으로 불러와졌습니다.\n이제 AI 분석 시 로그 데이터를 사용합니다.');
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        // 로그 데이터를 UI에 표시
+        function displayLogData(content) {
+            const lines = content.split('\n');
+            const container = document.getElementById('dataLogContent');
+            container.innerHTML = '';
+            
+            lines.slice(0, 50).forEach(line => {
+                if (line.trim()) {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry';
+                    logEntry.textContent = line.trim();
+                    container.appendChild(logEntry);
+                }
+            });
+        }
+        
+        // 로그 파일 저장 (모든 팜의 로그를 각각 별도 파일로 저장)
+        async function saveLogFile() {
+            const farms = currentFarmData.farms || [];
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            let savedCount = 0;
+            let savedFiles = [];
+            
+            // 1번부터 3번까지 모든 팜 확인
+            for (let farmId = 1; farmId <= 3; farmId++) {
+                try {
+                    // 메모리에서 해당 팜의 로그 가져오기
+                    const logs = farmLogs[farmId] || [];
+                    
+                    if (logs.length > 0) {
+                        // 로그 항목들을 텍스트로 변환
+                        let logContent = '';
+                        logs.forEach(logHtml => {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = logHtml;
+                            const logEntry = tempDiv.querySelector('.log-entry');
+                            if (logEntry) {
+                                logContent += logEntry.textContent + '\n';
+                            }
+                        });
+                        
+                        if (logContent.trim() !== '') {
+                            // 농장 정보 가져오기
+                            const farmInfo = farms.find(f => f.id === farmId);
+                            const cropName = farmInfo ? (farmInfo.cropName || '기본') : '기본';
+                            
+                            // 파일로 저장
+                            const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `SmartFarm_팜${farmId}_${cropName}_${timestamp}.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            
+                            savedCount++;
+                            savedFiles.push(`팜${farmId}_${cropName} (${logs.length}개 항목)`);
+                            
+                            // 여러 파일 다운로드를 위해 약간의 지연 (브라우저가 파일 다운로드 다이얼로그를 처리할 시간)
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                        }
+                    }
+                } catch (e) {
+                    console.error(`팜 ${farmId} 로그 저장 오류:`, e);
+                }
+            }
+            
+            if (savedCount === 0) {
+                alert('저장할 로그 데이터가 없습니다.\n\n각 팜에 데이터 로그가 있는지 확인하세요.');
+            } else {
+                alert(`로그 파일 ${savedCount}개가 저장되었습니다.\n\n저장된 파일:\n${savedFiles.join('\n')}`);
+            }
+        }
+        
+        // 분석 모드 변경
+        function onAnalysisModeChange() {
+            const mode = document.getElementById('analysisMode').value;
+            analysisMode = mode;
+            
+            if (mode === 'logs' && !loadedLogData) {
+                alert('로그 파일을 먼저 불러와주세요.');
+                document.getElementById('analysisMode').value = 'realtime';
+                analysisMode = 'realtime';
+                return;
+            }
+            
+            // 모드 변경 시 그래프 업데이트
+            if (mode === 'logs' && loadedLogData) {
+                updateChartFromLogs(loadedLogData);
+            } else if (mode === 'realtime') {
+                // 실시간 모드로 전환 시 그래프 초기화
+                resetChart();
+            }
+        }
+        
+        // AI 분석 함수들 (현재 작물에 맞춤)
+        function analyzeAverage() {
+            const currentFarm = currentFarmData.currentFarm || 1;
+            const farms = currentFarmData.farms || [];
+            const currentFarmInfo = farms.find(f => f.id === currentFarm);
+            const cropName = currentFarmInfo ? (currentFarmInfo.cropName || '기본') : '기본';
+            const farmTitle = `스마트팜 ${currentFarm}번 - ${cropName}`;
+            
+            showResult(`평균 데이터 분석 (${farmTitle})`, '분석 중...');
+            
+            // 분석 모드에 따라 요청 데이터 구성
+            let requestData = { 
+                days: 7,
+                farm_id: currentFarm  // 현재 농장 ID 전송
+            };
+            if (analysisMode === 'logs' && loadedLogData) {
+                requestData.use_logs = true;
+                requestData.log_data = loadedLogData;
+            }
+            
+            fetch('/api/ai/average', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    let result = `🍎 ${data.crop_type || '사과'} 재배 평균 데이터 분석 결과\n`;
+                    result += `분석 기간: 최근 ${data.period_days || 7}일\n`;
+                    result += `데이터 수: ${data.data_count || 0}개\n`;
+                    result += `전체 환경 점수: ${((data.overall_score || 0) * 100).toFixed(1)}%\n\n`;
+                    result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+                    
+                    // 습도 분석
+                    if (data.humidity) {
+                        result += `📊 습도 분석:\n`;
+                        result += `  평균: ${data.humidity.average?.toFixed(2) || 0}%`;
+                        result += ` (최소: ${data.humidity.min?.toFixed(2) || 0}%, 최대: ${data.humidity.max?.toFixed(2) || 0}%)\n`;
+                        result += `  ${cropName} 재배 최적 범위: ${data.humidity.optimal_range || '60-80%'}\n`;
+                        result += `  현재 상태: ${data.humidity.status || '정상'} (점수: ${((data.humidity.optimal_score || 0) * 100).toFixed(1)}%)\n\n`;
+                    }
+                    
+                    // 온도 분석
+                    if (data.temperature) {
+                        result += `🌡️ 온도 분석:\n`;
+                        result += `  평균: ${data.temperature.average?.toFixed(2) || 0}℃`;
+                        result += ` (최소: ${data.temperature.min?.toFixed(2) || 0}℃, 최대: ${data.temperature.max?.toFixed(2) || 0}℃)\n`;
+                        result += `  ${cropName} 재배 최적 범위: ${data.temperature.optimal_range || '15-25℃'}\n`;
+                        result += `  현재 상태: ${data.temperature.status || '정상'} (점수: ${((data.temperature.optimal_score || 0) * 100).toFixed(1)}%)\n\n`;
+                    }
+                    
+                    // 채광 분석
+                    if (data.light) {
+                        result += `☀️ 채광 분석:\n`;
+                        result += `  평균: ${data.light.average?.toFixed(2) || 0}%`;
+                        result += ` (최소: ${data.light.min?.toFixed(2) || 0}%, 최대: ${data.light.max?.toFixed(2) || 0}%)\n`;
+                        result += `  ${cropName} 재배 최적 범위: ${data.light.optimal_range || '60-80%'}\n`;
+                        result += `  현재 상태: ${data.light.status || '정상'} (점수: ${((data.light.optimal_score || 0) * 100).toFixed(1)}%)\n\n`;
+                    }
+                    
+                    // 토양습도 분석
+                    if (data.soil_moisture) {
+                        result += `💧 토양습도 분석:\n`;
+                        result += `  평균: ${data.soil_moisture.average?.toFixed(2) || 0}%`;
+                        result += ` (최소: ${data.soil_moisture.min?.toFixed(2) || 0}%, 최대: ${data.soil_moisture.max?.toFixed(2) || 0}%)\n`;
+                        result += `  ${cropName} 재배 최적 범위: ${data.soil_moisture.optimal_range || '40-60%'}\n`;
+                        result += `  현재 상태: ${data.soil_moisture.status || '정상'} (점수: ${((data.soil_moisture.optimal_score || 0) * 100).toFixed(1)}%)\n\n`;
+                    }
+                    
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                        result += `💡 ${cropName} 재배 개선 추천사항:\n`;
+                        data.recommendations.forEach((rec, idx) => {
+                            result += `${idx + 1}. ${rec}\n`;
+                        });
+                    }
+                    
+                    showResult(`평균 데이터 분석 (${farmTitle})`, result);
+                })
+                .catch(error => {
+                    showResult('평균 데이터 분석 오류', '분석 중 오류가 발생했습니다: ' + error.message);
+                });
+        }
+        
+        function detectAnomalies() {
+            const currentFarm = currentFarmData.currentFarm || 1;
+            const farms = currentFarmData.farms || [];
+            const currentFarmInfo = farms.find(f => f.id === currentFarm);
+            const cropName = currentFarmInfo ? (currentFarmInfo.cropName || '기본') : '기본';
+            const farmTitle = `스마트팜 ${currentFarm}번 - ${cropName}`;
+            
+            showResult(`이상 징후 감지 (${farmTitle})`, '감지 중...');
+            
+            // 분석 모드에 따라 요청 데이터 구성
+            let requestData = { 
+                days: 7,
+                farm_id: currentFarm  // 현재 농장 ID 전송
+            };
+            if (analysisMode === 'logs' && loadedLogData) {
+                requestData.use_logs = true;
+                requestData.log_data = loadedLogData;
+            }
+            
+            fetch('/api/ai/anomaly', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    let result = `⚠️ ${data.crop_type || '사과'} 재배 이상 징후 감지 결과\n`;
+                    result += `분석 기간: 최근 ${data.period_days || 7}일\n`;
+                    result += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                    result += `총 이상 징후: ${data.total_anomalies || 0}개\n`;
+                    result += `  🔴 위험 (높음): ${data.critical_count || 0}개\n`;
+                    result += `  🟡 주의 (중간): ${data.warning_count || 0}개\n\n`;
+                    
+                    if (data.summary) {
+                        result += '센서별 이상 징후 현황:\n';
+                        result += `  습도 이상: ${data.summary.humidity_anomalies || 0}개\n`;
+                        result += `  온도 이상: ${data.summary.temperature_anomalies || 0}개\n`;
+                        result += `  채광 이상: ${data.summary.light_anomalies || 0}개\n`;
+                        result += `  토양습도 이상: ${data.summary.soil_moisture_anomalies || 0}개\n\n`;
+                    }
+                    
+                    if (data.anomalies && data.anomalies.length > 0) {
+                        result += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                        result += '주요 이상 징후 목록:\n\n';
+                        
+                        // 위험도 높은 것부터 정렬
+                        const sortedAnomalies = [...data.anomalies].sort((a, b) => {
+                            if (a.severity === '높음' && b.severity !== '높음') return -1;
+                            if (a.severity !== '높음' && b.severity === '높음') return 1;
+                            return 0;
+                        });
+                        
+                        sortedAnomalies.slice(0, 10).forEach((anomaly, idx) => {
+                            const severityIcon = anomaly.severity === '높음' ? '🔴' : '🟡';
+                            result += `${severityIcon} ${idx + 1}. ${anomaly.sensor}\n`;
+                            result += `   시간: ${anomaly.timestamp || '-'}\n`;
+                            result += `   값: ${anomaly.value?.toFixed(2) || 0}\n`;
+                            result += `   원인: ${anomaly.reason || anomaly.message || '-'}\n`;
+                            if (anomaly.optimal_min !== undefined && anomaly.optimal_max !== undefined) {
+                                result += `   ${cropName} 최적 범위: ${anomaly.optimal_min}-${anomaly.optimal_max}\n`;
+                            }
+                            result += '\n';
+                        });
+                        
+                        if (data.anomalies.length > 10) {
+                            result += `... 외 ${data.anomalies.length - 10}개 이상 징후\n`;
+                        }
+                    } else {
+                        result += '✅ 이상 징후가 감지되지 않았습니다.\n';
+                        result += '사과 재배에 적합한 환경 조건을 유지하고 있습니다.';
+                    }
+                    showResult(`이상 징후 감지 (${farmTitle})`, result);
+                })
+                .catch(error => {
+                    showResult('이상 징후 감지 오류', '감지 중 오류가 발생했습니다: ' + error.message);
+                });
+        }
+        
+        function showResult(title, content) {
+            const container = document.getElementById('resultContainer');
+            const titleEl = document.getElementById('resultTitle');
+            const contentEl = document.getElementById('resultContent');
+            
+            titleEl.textContent = title;
+            contentEl.textContent = content;
+            container.classList.add('active');
+            
+            // 스크롤을 맨 위로
+            container.scrollTop = 0;
+        }
+        
+        // 그래프 초기화
+        let sensorChart = null;
+        let chartData = {
+            labels: [],
+            datasets: [
+                {
+                    label: '온도 (℃)',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.4,
+                    yAxisID: 'y'
+                },
+                {
+                    label: '습도 (%)',
+                    data: [],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.4,
+                    yAxisID: 'y'
+                },
+                {
+                    label: '채광 (%)',
+                    data: [],
+                    borderColor: 'rgb(255, 206, 86)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    tension: 0.4,
+                    yAxisID: 'y',
+                    spanGaps: false,  // null 값 사이의 간격을 연결하지 않음
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                },
+                {
+                    label: '토양습도 (%)',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    yAxisID: 'y'
+                }
+            ]
+        };
+        
+        function initChart() {
+            const ctx = document.getElementById('sensorChart').getContext('2d');
+            sensorChart = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 10,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '시간'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '값'
+                            },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateChart(sensorData) {
+            // 분석 모드가 로그 파일이면 실시간 업데이트 하지 않음
+            if (analysisMode === 'logs') {
+                return;
+            }
+            
+            if (!sensorChart) {
+                initChart();
+            }
+            
+            if (!sensorData || !sensorData.sensors) return;
+            
+            // 현재 시간
+            const now = new Date();
+            const timeLabel = (now.getHours() < 10 ? '0' : '') + now.getHours() + ':' +
+                            (now.getMinutes() < 10 ? '0' : '') + now.getMinutes() + ':' +
+                            (now.getSeconds() < 10 ? '0' : '') + now.getSeconds();
+            
+            // 센서 데이터 추출
+            let temperature = null;
+            let humidity = null;
+            let light = null;
+            let soilMoisture = null;
+            
+            sensorData.sensors.forEach(sensor => {
+                if (sensor.name === '온도') {
+                    temperature = parseFloat(sensor.rawValue);
+                } else if (sensor.name === '습도') {
+                    humidity = parseFloat(sensor.rawValue);
+                } else if (sensor.name === '채광') {
+                    light = parseFloat(sensor.rawValue);
+                    // 디버깅: 채광 데이터 확인
+                    console.log('🔍 채광 데이터:', sensor, '파싱된 값:', light);
+                } else if (sensor.name === '토양습도') {
+                    soilMoisture = parseFloat(sensor.rawValue);
+                }
+            });
+            
+            // 디버깅: 모든 센서 데이터 확인
+            console.log('🔍 그래프 업데이트 - 온도:', temperature, '습도:', humidity, '채광:', light, '토양습도:', soilMoisture);
+            
+            // 데이터 추가 (채광이 0이어도 유효한 값이므로 포함)
+            if (temperature !== null || humidity !== null || (light !== null && !isNaN(light)) || soilMoisture !== null) {
+                // 시간 레이블 추가 (최대 20개까지만 유지)
+                chartData.labels.push(timeLabel);
+                if (chartData.labels.length > 20) {
+                    chartData.labels.shift();
+                }
+                
+                // 온도 데이터
+                chartData.datasets[0].data.push(temperature !== null && !isNaN(temperature) ? temperature : null);
+                if (chartData.datasets[0].data.length > 20) {
+                    chartData.datasets[0].data.shift();
+                }
+                
+                // 습도 데이터
+                chartData.datasets[1].data.push(humidity !== null && !isNaN(humidity) ? humidity : null);
+                if (chartData.datasets[1].data.length > 20) {
+                    chartData.datasets[1].data.shift();
+                }
+                
+                // 채광 데이터 (0도 유효한 값이므로 포함)
+                const lightValue = (light !== null && !isNaN(light)) ? light : null;
+                chartData.datasets[2].data.push(lightValue);
+                console.log('🔍 채광 그래프 데이터 추가:', lightValue, '전체 데이터:', chartData.datasets[2].data);
+                if (chartData.datasets[2].data.length > 20) {
+                    chartData.datasets[2].data.shift();
+                }
+                
+                // 토양습도 데이터
+                chartData.datasets[3].data.push(soilMoisture !== null && !isNaN(soilMoisture) ? soilMoisture : null);
+                if (chartData.datasets[3].data.length > 20) {
+                    chartData.datasets[3].data.shift();
+                }
+                
+                // 그래프 업데이트
+                sensorChart.update('none');  // 애니메이션 없이 업데이트
+            }
+        }
+        
+        // 로그 데이터에서 그래프 데이터 추출
+        function updateChartFromLogs(logContent) {
+            if (!sensorChart) {
+                initChart();
+            }
+            
+            const lines = logContent.split('\n');
+            const logEntries = [];
+            
+            // 로그에서 센서 데이터 추출
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                
+                // 타임스탬프 추출 (다양한 형식 지원)
+                // 형식 1: [HH:MM:SS]
+                let timeMatch = line.match(/\[(\d{2}:\d{2}:\d{2})\]/);
+                let timeLabel = null;
+                
+                if (timeMatch) {
+                    timeLabel = timeMatch[1];
+                } else {
+                    // 형식 2: [2025. 11. 19. 오후 5:19:41]
+                    const fullTimeMatch = line.match(/\[(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}):(\d{2}):(\d{2})\]/);
+                    if (fullTimeMatch) {
+                        let hour = parseInt(fullTimeMatch[5]);
+                        const ampm = fullTimeMatch[4];
+                        if (ampm === '오후' && hour !== 12) hour += 12;
+                        if (ampm === '오전' && hour === 12) hour = 0;
+                        timeLabel = `${hour.toString().padStart(2, '0')}:${fullTimeMatch[6]}:${fullTimeMatch[7]}`;
+                    } else {
+                        return; // 타임스탬프를 찾을 수 없으면 스킵
+                    }
+                }
+                
+                // 센서 데이터 추출 (새 형식 우선)
+                let temperatureMatch, humidityMatch, lightMatch, soilMatch;
+                
+                if (line.includes('센서데이터')) {
+                    // 형식 1: 웹 표준 형식 - 센서데이터 습도:값% 온도:값℃ 채광:값% 토양습도:값%
+                    temperatureMatch = line.match(/온도:(\d+\.?\d*)\s*[℃°C]/);
+                    humidityMatch = line.match(/습도:(\d+\.?\d*)\s*%/);
+                    lightMatch = line.match(/채광:(\d+\.?\d*)\s*%/);
+                    soilMatch = line.match(/토양\s*습도:(\d+\.?\d*)\s*%/);
+                } else if (line.includes('온도:') && line.includes('습도:') && (line.includes('채광:') || line.includes('토양'))) {
+                    // 형식 2: 실시간 데이터 저장 형식 - 온도:값°C습도:값%채광:값%토양 습도:값%
+                    temperatureMatch = line.match(/온도:\s*(\d+\.?\d*)\s*[℃°C]/);
+                    humidityMatch = line.match(/습도:\s*(\d+\.?\d*)\s*%/);
+                    lightMatch = line.match(/채광:\s*(\d+\.?\d*)\s*%/);
+                    soilMatch = line.match(/토양\s*습도:\s*(\d+\.?\d*)\s*%/);
+                } else {
+                    // 기존 형식 지원 (하위 호환성)
+                    temperatureMatch = line.match(/온도[^()]*\([^)]*?(\d+\.?\d*)\s*[℃°C]/);
+                    humidityMatch = line.match(/습도[^()]*\([^)]*?(\d+\.?\d*)\s*%/);
+                    lightMatch = line.match(/채광[^()]*?\([^)]*?(\d+\.?\d*)\s*%/);
+                    soilMatch = line.match(/토양습도[^()]*?\([^)]*?(\d+\.?\d*)\s*%/);
+                }
+                
+                if (temperatureMatch || humidityMatch || lightMatch || soilMatch) {
+                    logEntries.push({
+                        time: timeLabel,
+                        temperature: temperatureMatch ? parseFloat(temperatureMatch[1]) : null,
+                        humidity: humidityMatch ? parseFloat(humidityMatch[1]) : null,
+                        light: lightMatch ? parseFloat(lightMatch[1]) : null,
+                        soilMoisture: soilMatch ? parseFloat(soilMatch[1]) : null
+                    });
+                }
+            });
+            
+            // 최대 50개까지만 사용 (최신 데이터)
+            const entriesToUse = logEntries.slice(-50);
+            
+            // 그래프 데이터 초기화
+            chartData.labels = [];
+            chartData.datasets[0].data = [];  // 온도
+            chartData.datasets[1].data = [];  // 습도
+            chartData.datasets[2].data = [];  // 채광
+            chartData.datasets[3].data = [];  // 토양습도
+            
+            // 로그 데이터를 그래프에 추가
+            entriesToUse.forEach(entry => {
+                chartData.labels.push(entry.time);
+                chartData.datasets[0].data.push(entry.temperature);
+                chartData.datasets[1].data.push(entry.humidity);
+                chartData.datasets[2].data.push(entry.light);
+                chartData.datasets[3].data.push(entry.soilMoisture);
+            });
+            
+            // 그래프 업데이트
+            sensorChart.update('none');
+        }
+        
+        // 그래프 초기화
+        function resetChart() {
+            if (!sensorChart) {
+                initChart();
+                return;
+            }
+            
+            chartData.labels = [];
+            chartData.datasets[0].data = [];
+            chartData.datasets[1].data = [];
+            chartData.datasets[2].data = [];
+            chartData.datasets[3].data = [];
+            
+            sensorChart.update('none');
+        }
+        
+        // 그래프 초기화
+        initChart();
+        
+        // 초기 농장 정보 로드
+        updateFarmInfo();
+        
+        // 주기적으로 데이터 업데이트 (2초마다)
+        // 단, 로그 모드일 때는 중단됨 (updateSensorData 내부에서 체크)
+        setInterval(function() {
+            if (analysisMode === 'realtime') {
+                updateSensorData();
+            }
+        }, 2000);
+        
+        // 농장 정보 업데이트 (10초마다)
+        setInterval(function() {
+            updateFarmInfo();
+        }, 10000);
+        
+        // 초기 로드 (실시간 모드일 때만)
+        // 페이지 로드 후 약간의 지연을 두고 실행
+        setTimeout(function() {
+            if (analysisMode === 'realtime') {
+                updateSensorData();
+            }
+        }, 500);
+        
+        // 주기적으로 오래된 로그 정리 (5분마다)
+        setInterval(function() {
+            if (analysisMode === 'realtime') {
+                cleanupOldLogs();
+            }
+        }, LOG_CONFIG.cleanupInterval);
+    </script>
+</body>
+</html>
